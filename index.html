@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#071113" />
   <title>SUBJECT II – Dottore Archive</title>
+  <meta name="author" content="Yugor / Югор" />
+  <meta name="description" content="A bilingual fan-made research archive dedicated to Il Dottore from Genshin Impact: canon timeline, Segments, relationships, analysis and official media sources." />
+  <meta name="robots" content="index,follow" />
+  <meta property="og:title" content="SUBJECT II – Dottore Archive" />
+  <meta property="og:description" content="Bilingual fan-made archive about Il Dottore: canon timeline, Segments, analysis, relationships and official media." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
   <style>
 :root {
   --bg: #050b0d;
@@ -291,6 +298,24 @@ h3 { margin: 7px 0 18px; font-size: clamp(32px, 5vw, 58px); font-weight: 500; le
 .waveform i { display: block; width: 2px; background: rgba(139,214,220,.45); transition: .2s; }
 .duration { font: 9px "IBM Plex Mono", monospace; color: #617a7d; }
 
+
+.author-credit {
+  margin-top: 18px; padding: 18px 20px; border: 1px solid var(--line);
+  background: linear-gradient(135deg, rgba(139,214,220,.035), rgba(2,8,9,.18));
+  display: flex; justify-content: space-between; gap: 22px; align-items: center; flex-wrap: wrap;
+}
+.author-credit .credit-main { display: grid; gap: 5px; }
+.author-credit .credit-label { font: 9px "IBM Plex Mono", monospace; color: var(--cyan-dim); letter-spacing: .14em; text-transform: uppercase; }
+.author-credit strong { font-size: 14px; font-weight: 600; letter-spacing: .03em; }
+.author-credit .credit-note { color: #60787b; font-size: 11px; line-height: 1.5; max-width: 720px; }
+.author-credit .author-site {
+  padding: 9px 12px; border: 1px solid var(--line-strong); color: var(--cyan);
+  text-decoration: none; font: 9px "IBM Plex Mono", monospace; letter-spacing: .09em;
+  background: rgba(139,214,220,.05);
+}
+.author-credit .author-site:hover { background: rgba(139,214,220,.10); }
+.author-credit .site-pending { font: 9px "IBM Plex Mono", monospace; color: #536b6e; letter-spacing: .08em; }
+
 footer { display: flex; justify-content: space-between; color: #3e5658; font: 9px "IBM Plex Mono", monospace; padding: 20px 2px 8px; }
 .mobile-menu { display: none; position: fixed; left: 14px; top: 14px; z-index: 60; width: 42px; height: 42px; border: 1px solid var(--line); background: rgba(6,15,17,.95); color: var(--cyan); }
 .toast { position: fixed; right: 22px; bottom: 22px; z-index: 1200; padding: 10px 13px; border: 1px solid var(--line-strong); background: #071214; color: var(--cyan); font: 9px "IBM Plex Mono", monospace; opacity: 0; transform: translateY(8px); pointer-events: none; transition: .25s; }
@@ -318,6 +343,7 @@ body.pulse .panel { box-shadow: 0 0 0 1px rgba(139,214,220,.14), 0 20px 90px rgb
 }
 
 @media (max-width: 760px) {
+  .author-credit { align-items: flex-start; }
   .mobile-menu { display: block; }
   .sidebar { transform: translateX(-101%); width: min(86vw, 300px); transition: .28s ease; }
   .sidebar.open { transform: translateX(0); }
@@ -810,14 +836,32 @@ body.pulse .panel { box-shadow: 0 0 0 1px rgba(139,214,220,.14), 0 20px 90px rgb
       <div class="audio-online-note" data-bi data-ru="Встроенный плеер и превью работают только при подключении к интернету. Если браузер блокирует воспроизведение из локального HTML, используйте кнопку &quot;Открыть официальный источник&quot;." data-en="The embedded player and previews require an internet connection. If the browser blocks playback from a local HTML file, use the &quot;Open official source&quot; link.">Встроенный плеер и превью работают только при подключении к интернету. Если браузер блокирует воспроизведение из локального HTML, используйте кнопку &quot;Открыть официальный источник&quot;.</div>
     </section>
 
+
+    <section class="author-credit" aria-label="Автор проекта">
+      <div class="credit-main">
+        <span class="credit-label" data-bi data-ru="АВТОР АРХИВА" data-en="ARCHIVE MAINTAINER">АВТОР АРХИВА</span>
+        <strong>Yugor / Югор</strong>
+        <span class="credit-note" data-bi
+          data-ru="Некоммерческий фанатский архив. Genshin Impact и связанные материалы принадлежат HoYoverse. Проект создан для систематизации официальных материалов и анализа персонажа."
+          data-en="A non-commercial fan archive. Genshin Impact and related materials belong to HoYoverse. This project was created to organize official materials and character analysis.">Некоммерческий фанатский архив. Genshin Impact и связанные материалы принадлежат HoYoverse. Проект создан для систематизации официальных материалов и анализа персонажа.</span>
+      </div>
+      <a class="author-site" id="authorSite" href="#" target="_blank" rel="noopener noreferrer" hidden
+         data-bi data-ru="Личный сайт ↗" data-en="Personal site ↗">Личный сайт ↗</a>
+      <span class="site-pending" id="authorSitePending" data-bi
+            data-ru="Личный сайт · ссылка будет добавлена позже"
+            data-en="Personal site · link will be added later">Личный сайт · ссылка будет добавлена позже</span>
+    </section>
+
     <footer>
-      <span data-i18n="footerDraft">АРХИВ SUBJECT II · ЧЕРНОВИК 13</span>
+      <span data-bi data-ru="АРХИВ SUBJECT II · FINAL 02" data-en="SUBJECT II ARCHIVE · FINAL 02">АРХИВ SUBJECT II · FINAL 02</span>
       <span data-i18n="footerUnavailable">Часть данных намеренно недоступна.</span>
     </footer>
   </main>
 
   <div class="toast" id="toast">INTERFACE SIGNAL RESTORED</div>
   <script>
+// When the personal Yugor Lab homepage is ready, paste its URL here.
+const PERSONAL_SITE_URL = "";
 const navLinks = [...document.querySelectorAll('.nav-link')];
 const sections = [...document.querySelectorAll('main section[id]')];
 const currentSection = document.getElementById('currentSection');
@@ -1075,6 +1119,22 @@ document.getElementById('themePulse').addEventListener('click', () => {
   document.body.classList.toggle('pulse');
   showToast(document.body.classList.contains('pulse') ? (currentLang === 'ru' ? 'РЕЖИМ ИССЛЕДОВАНИЯ: УСИЛЕННЫЙ' : 'RESEARCH MODE: ENHANCED') : (currentLang === 'ru' ? 'РЕЖИМ ИССЛЕДОВАНИЯ: СТАНДАРТНЫЙ' : 'RESEARCH MODE: STANDARD'));
 });
+
+
+function updateAuthorSite() {
+  const link = document.getElementById('authorSite');
+  const pending = document.getElementById('authorSitePending');
+  if (!link || !pending) return;
+  if (PERSONAL_SITE_URL && /^https?:\/\//i.test(PERSONAL_SITE_URL)) {
+    link.href = PERSONAL_SITE_URL;
+    link.hidden = false;
+    pending.hidden = true;
+  } else {
+    link.hidden = true;
+    pending.hidden = false;
+  }
+}
+updateAuthorSite();
 
   </script>
 </body>
