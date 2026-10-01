@@ -12,7 +12,7 @@ https://yugorlab.github.io/dottore-archive/
 
 ## Languages
 
-- English — default
+- English – default
 - Russian
 - Teyvat Script – English transliteration mode
 
