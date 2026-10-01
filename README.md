@@ -12,9 +12,13 @@ https://yugorlab.github.io/dottore-archive/
 
 ## Languages
 
-- English
+- English — default
 - Russian
-- Teyvat Script will be added soon — English transliteration mode
+- Teyvat Script – English transliteration mode
+
+> Teyvat Script letters are based on the known in-game alphabet.
+> Additional digits and punctuation are a fan-made stylistic extension
+> and are not presented as canonical Teyvat writing.
 
 ## Status
 
