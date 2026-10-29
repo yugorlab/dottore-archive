@@ -211,6 +211,10 @@ function applyLanguage(lang) {
     const key = el.dataset.l10nAlt;
     el.alt = tr(key, sourceLang);
   });
+  document.querySelectorAll('[data-l10n-placeholder]').forEach(el => {
+    const key = el.dataset.l10nPlaceholder;
+    el.placeholder = tr(key, sourceLang);
+  });
 
   langButtons.forEach(btn => {
     const active = btn.dataset.lang === lang;
@@ -228,6 +232,14 @@ function applyLanguage(lang) {
       code: activeLangButton?.dataset.short || lang.toUpperCase()
     }, sourceLang));
   }
+
+  const searchButton = document.getElementById('searchTrigger');
+  if (searchButton) {
+    searchButton.title = tr('search.open', sourceLang);
+    searchButton.setAttribute('aria-label', tr('search.open', sourceLang));
+  }
+  const searchCloser = document.getElementById('searchClose');
+  if (searchCloser) searchCloser.setAttribute('aria-label', tr('search.close', sourceLang));
 
   const activeNav = document.querySelector('.nav-link.active');
   const activeSection = activeNav?.dataset.target || 'overview';
@@ -284,6 +296,193 @@ function loadMedia(id, scrollToAudio = false) {
 
 document.querySelectorAll('.audio-entry').forEach(btn => btn.addEventListener('click', () => loadMedia(btn.dataset.audioId)));
 document.querySelectorAll('[data-load-media]').forEach(btn => btn.addEventListener('click', () => loadMedia(btn.dataset.loadMedia, true)));
+
+
+// Client-side full-text search across the currently rendered archive.
+const searchOverlay = document.getElementById('archiveSearchOverlay');
+const searchTrigger = document.getElementById('searchTrigger');
+const searchClose = document.getElementById('searchClose');
+const searchInput = document.getElementById('archiveSearchInput');
+const searchResults = document.getElementById('archiveSearchResults');
+let searchReturnFocus = null;
+
+function normalizeSearchText(value) {
+  return String(value || '').toLocaleLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/ё/g, 'е').replace(/[’‘`]/g, "'")
+    .replace(/[^\p{L}\p{N}' -]/gu, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function elementSearchText(el) {
+  const raw = el.tagName === 'DETAILS'
+    ? (el.textContent || '')
+    : (el.innerText || el.textContent || '');
+  return raw.replace(/\s+/g, ' ').trim();
+}
+
+function searchCandidates() {
+  const selectors = [
+    '.hero-copy', '.zandik-main', '.specimen-card', '.early-record', '.lore-record', '.timeline > article',
+    '.analysis-card', '.theory-card', '.fit-card', '.relationship-card',
+    '.scene-study', '.webttore-record', '.remote-source-card', '.audio-entry',
+    '.archive-grid > *', '.relationship-card'
+  ].join(',');
+  const nodes = [...document.querySelectorAll(selectors)].filter(el => el.closest('main'));
+  const seen = new Set();
+  return nodes.filter(el => {
+    if (seen.has(el)) return false;
+    seen.add(el);
+    const text = elementSearchText(el);
+    return text.length >= 24 && !el.closest('[hidden]');
+  }).map((el, index) => {
+    if (!el.id) el.id = `archive-search-result-${index + 1}`;
+    const heading = el.querySelector('h2,h3,h4,h5,h6,.relation-name,.lore-record-label,.audio-entry-title');
+    const section = el.closest('main section[id]');
+    return {
+      el,
+      id: el.id,
+      title: (heading?.innerText || heading?.textContent || section?.querySelector('h2,h3')?.innerText || section?.id || tr('search.section')).trim(),
+      section: section ? (section.querySelector('.section-heading h3, h2, h3')?.innerText || section.id).trim() : '',
+      text: elementSearchText(el)
+    };
+  });
+}
+
+function renderSearchResults() {
+  const sourceLang = getContentLanguage(currentLang);
+  const query = normalizeSearchText(searchInput.value);
+  if (!query) {
+    searchResults.innerHTML = `<p class="search-empty">${escapeSearchHtml(tr('search.start', sourceLang))}</p>`;
+    return;
+  }
+  const terms = query.split(' ').filter(Boolean);
+  const matches = searchCandidates().map(item => {
+    const titleHaystack = normalizeSearchText(item.title);
+    const bodyHaystack = normalizeSearchText(`${item.title} ${item.section} ${item.text}`);
+    const titleHits = terms.reduce((s, t) => s + (titleHaystack.includes(t) ? 1 : 0), 0);
+    const bodyHits = terms.reduce((s, t) => s + (bodyHaystack.includes(t) ? 1 : 0), 0);
+    return { ...item, titleHits, bodyHits };
+  }).filter(item => item.bodyHits > 0)
+    .sort((a, b) =>
+      b.titleHits - a.titleHits ||
+      b.bodyHits - a.bodyHits ||
+      a.title.localeCompare(b.title)
+    )
+    .slice(0, 30);
+
+  if (!matches.length) {
+    searchResults.innerHTML = `<p class="search-empty">${escapeSearchHtml(tr('search.noResults', sourceLang))}</p>`;
+    return;
+  }
+
+  const countText = tr('search.resultsCount', sourceLang).replace('{count}', String(matches.length));
+  const jumpLabel = tr('search.jump', sourceLang);
+
+  searchResults.innerHTML =
+    `<p class="search-results-count">${escapeSearchHtml(countText)}</p>` +
+    matches.map(item => {
+      const rawSnippet = makeSearchSnippet(item.text, terms);
+      const snippetHtml = highlightSearchTerms(rawSnippet, terms);
+      const aria = `${jumpLabel}: ${item.title}`;
+      return `<button class="search-result" type="button" aria-label="${escapeSearchHtml(aria)}" data-search-target="${escapeSearchHtml(item.id)}"><span class="search-result-title">${escapeSearchHtml(item.title)}</span><span class="search-result-meta">${escapeSearchHtml(item.section)}</span><span class="search-result-snippet">${snippetHtml}</span></button>`;
+    }).join('');
+
+  searchResults.scrollTop = 0;
+}
+
+function highlightSearchTerms(text, terms) {
+  const safeTerms = (terms || []).filter(Boolean);
+  if (!safeTerms.length) return escapeSearchHtml(text);
+  const pattern = safeTerms
+    .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .sort((a, b) => b.length - a.length)
+    .join('|');
+  if (!pattern) return escapeSearchHtml(text);
+  const re = new RegExp(`(${pattern})`, 'gi');
+  return String(text || '').split(re).map((part, i) =>
+    (i % 2 === 1)
+      ? `<mark>${escapeSearchHtml(part)}</mark>`
+      : escapeSearchHtml(part)
+  ).join('');
+}
+
+function escapeSearchHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+
+function makeSearchSnippet(text, terms) {
+  const safeTerms = (terms || []).filter(Boolean);
+  if (!safeTerms.length) {
+    return text.slice(0, 190) + (text.length > 190 ? '…' : '');
+  }
+  const lowerText = text.toLowerCase();
+  let bestIndex = -1;
+  for (const t of safeTerms) {
+    const idx = lowerText.indexOf(t.toLowerCase());
+    if (idx >= 0 && (bestIndex < 0 || idx < bestIndex)) bestIndex = idx;
+  }
+  if (bestIndex < 0) {
+    return text.slice(0, 190) + (text.length > 190 ? '…' : '');
+  }
+  if (text.length <= 190) return text;
+  const start = Math.max(0, Math.min(text.length - 170, bestIndex - 65));
+  return (start > 0 ? '…' : '') +
+    text.slice(start, start + 170).trim() +
+    (start + 170 < text.length ? '…' : '');
+}
+
+function openArchiveSearch() {
+  searchReturnFocus = document.activeElement;
+  closeLanguageMenu();
+  setMobileMenu(false);
+  searchOverlay.hidden = false;
+  searchOverlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('search-open');
+  searchInput.value = '';
+  renderSearchResults();
+  requestAnimationFrame(() => searchInput.focus());
+}
+function closeArchiveSearch() {
+  searchOverlay.hidden = true;
+  searchOverlay.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('search-open');
+  if (searchReturnFocus && typeof searchReturnFocus.focus === 'function') searchReturnFocus.focus();
+}
+searchTrigger?.addEventListener('click', openArchiveSearch);
+searchClose?.addEventListener('click', closeArchiveSearch);
+let searchDebounce;
+searchInput?.addEventListener('input', () => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(renderSearchResults, 120);
+});
+searchOverlay?.addEventListener('click', event => {
+  if (event.target === searchOverlay) closeArchiveSearch();
+  const result = event.target.closest('[data-search-target]');
+  if (!result) return;
+  const target = document.getElementById(result.dataset.searchTarget);
+  closeArchiveSearch();
+  if (!target) return;
+  let opener = target.closest('details');
+  while (opener) {
+    opener.open = true;
+    opener = opener.parentElement?.closest('details');
+  }
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  target.classList.add('search-result-focus');
+  window.setTimeout(() => target.classList.remove('search-result-focus'), 1400);
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && searchOverlay && !searchOverlay.hidden) {
+    closeArchiveSearch();
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault();
+    if (searchOverlay.hidden) openArchiveSearch(); else searchInput.focus();
+  }
+  if (event.key === 'Enter' && searchOverlay && !searchOverlay.hidden && document.activeElement === searchInput) {
+    searchResults.querySelector('[data-search-target]')?.click();
+  }
+});
 
 applyLanguage('en');
 loadMedia('lazzo');
